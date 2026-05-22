@@ -576,8 +576,10 @@ function selectRadio(btn, group) {
 }
 
 function submitRespond() {
-  const name = document.getElementById('respond-name').value.trim();
-  const st   = document.getElementById('respond-status');
+  const name    = document.getElementById('respond-name').value.trim();
+  const comment = document.getElementById('respond-comment').value.trim();
+  const st      = document.getElementById('respond-status');
+
   if (!name) {
     st.className = 'text-sm font-bold px-3 py-2 rounded-lg bg-red-50 text-red-600 border border-red-200';
     st.textContent = '⚠️ お子さんのお名前を入力してください';
@@ -588,13 +590,28 @@ function submitRespond() {
     st.textContent = '⚠️ 出席・欠席を選択してください';
     st.classList.remove('hidden'); return;
   }
+
   document.getElementById('respond-btn-text').textContent = '送信中…';
+
   setTimeout(() => {
-    st.className = 'text-sm font-bold px-3 py-2 rounded-lg bg-amber-50 text-amber-700 border border-amber-200';
-    st.textContent = '🎯 デモモードのため実際には送信されません';
+    // デモ用メモリに保存
+    const evId = currentEvent.id;
+    if (!DUMMY_RESPONSES[evId]) DUMMY_RESPONSES[evId] = [];
+
+    // 同名の回答があれば上書き
+    const existing = DUMMY_RESPONSES[evId].findIndex(r => r.name === name);
+    const entry = { name, attend: selectedAttend, ride: selectedRide, comment };
+    if (existing >= 0) {
+      DUMMY_RESPONSES[evId][existing] = entry;
+    } else {
+      DUMMY_RESPONSES[evId].push(entry);
+    }
+
+    st.className = 'text-sm font-bold px-3 py-2 rounded-lg bg-green-50 text-green-700 border border-green-200';
+    st.textContent = '✅ 回答を受け付けました（デモ）';
     st.classList.remove('hidden');
     document.getElementById('respond-btn-text').textContent = '回答を送信';
-  }, 800);
+  }, 600);
 }
 
 // ─── 結果モーダル ─────────────────────────────────────────────────────────

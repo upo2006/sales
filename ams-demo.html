@@ -549,8 +549,8 @@ function closeDetail() {
 // ─── 回答モーダル ─────────────────────────────────────────────────────────
 function openRespond() {
   if (!currentEvent) return;
-  closeDetail();
   const ev = currentEvent;
+  closeDetail();
   document.getElementById('respond-event-name').textContent = ev.title + '　' + ev.date.replace(/-/g,'/');
   document.getElementById('respond-name').value = '';
   document.getElementById('respond-comment').value = '';
@@ -593,9 +593,10 @@ function submitRespond() {
 
   document.getElementById('respond-btn-text').textContent = '送信中…';
 
+  const savedEvent = currentEvent;
   setTimeout(() => {
     // デモ用メモリに保存
-    const evId = currentEvent.id;
+    const evId = savedEvent.id;
     if (!DUMMY_RESPONSES[evId]) DUMMY_RESPONSES[evId] = [];
 
     // 同名の回答があれば上書き
@@ -617,8 +618,8 @@ function submitRespond() {
 // ─── 結果モーダル ─────────────────────────────────────────────────────────
 function openResults() {
   if (!currentEvent) return;
-  closeDetail();
   const ev = currentEvent;
+  closeDetail();
   document.getElementById('results-event-name').textContent = ev.title + '　' + ev.date.replace(/-/g,'/');
 
   const responses = DUMMY_RESPONSES[ev.id] || [

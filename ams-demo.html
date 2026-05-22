@@ -1,0 +1,608 @@
+<!doctype html>
+<html lang="ja" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>出欠管理アプリ デモ | チーム管理システム</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary:      #c0392b;
+      --primary-dark: #922b21;
+      --primary-mid:  #a93226;
+      --primary-light:#e74c3c;
+    }
+    * { font-family: 'Noto Sans JP', sans-serif; }
+    body { box-sizing: border-box; }
+    .modal-backdrop { background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
+
+    .bg-primary       { background-color: var(--primary) !important; }
+    .bg-red-500, .hover\:bg-red-500:hover   { background-color: var(--primary)      !important; }
+    .bg-red-600, .hover\:bg-red-600:hover   { background-color: var(--primary-mid)  !important; }
+    .bg-red-700, .hover\:bg-red-700:hover   { background-color: var(--primary-dark) !important; }
+    .from-red-700 { --tw-gradient-from: var(--primary-dark) !important; }
+    .from-red-600 { --tw-gradient-from: var(--primary-mid)  !important; }
+    .to-red-500   { --tw-gradient-to:   var(--primary)      !important; }
+    .to-red-600   { --tw-gradient-to:   var(--primary-mid)  !important; }
+    .text-red-600 { color: var(--primary-mid) !important; }
+    .text-red-500 { color: var(--primary)     !important; }
+    .border-red-500 { border-color: var(--primary) !important; }
+
+    .cal-radio-btn {
+      width: 100%; padding: 0.5rem 0.15rem; border-radius: 0.75rem;
+      border: 2px solid #e5e7eb; background: #fff; color: #4b5563;
+      font-weight: 700; font-size: min(0.8rem, 3.5vw); cursor: pointer;
+      transition: all 0.15s; text-align: center; display: block; white-space: nowrap;
+    }
+    .cal-radio-btn:hover { border-color: #d1d5db; background: #f9fafb; }
+    .cal-radio-btn[data-selected="1"][data-color="green"]  { border-color:#22c55e; background:#f0fdf4; color:#15803d; }
+    .cal-radio-btn[data-selected="1"][data-color="red"]    { border-color:#ef4444; background:#fef2f2; color:#dc2626; }
+    .cal-radio-btn[data-selected="1"][data-color="blue"]   { border-color:#3b82f6; background:#eff6ff; color:#1d4ed8; }
+    .cal-radio-btn[data-selected="1"][data-color="amber"]  { border-color:#f59e0b; background:#fffbeb; color:#b45309; }
+
+    .demo-banner {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #fff;
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 900;
+      letter-spacing: 0.05em;
+      padding: 8px 16px;
+    }
+
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+    .cal-day { min-height: 72px; }
+    @media (max-width: 640px) { .cal-day { min-height: 52px; } }
+    .event-pill {
+      display: block; font-size: 10px; line-height: 1.3;
+      padding: 1px 4px; border-radius: 3px; margin-top: 2px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      cursor: pointer; color: #fff; font-weight: 600;
+    }
+  </style>
+</head>
+<body class="h-full bg-gray-50">
+
+<!-- デモバナー -->
+<div class="demo-banner">
+  🎯 これはデモです — 実際のデータは送信されません
+</div>
+
+<div class="min-h-full">
+  <!-- ヘッダー -->
+  <header class="p-4 pb-2">
+    <div class="max-w-[750px] mx-auto">
+      <!-- ファミリーモードナビ -->
+      <div class="bg-white rounded-2xl shadow border border-gray-200 px-4 py-3 flex items-center justify-between gap-3">
+        <h2 class="text-base font-black text-gray-800 whitespace-nowrap">📅 カレンダー</h2>
+        <span class="text-xs bg-amber-100 text-amber-700 font-bold px-2 py-1 rounded-full">FC甲子園 デモ</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-[750px] mx-auto px-4 pb-6 space-y-3">
+
+    <!-- カテゴリーフィルター -->
+    <div class="bg-white rounded-2xl shadow border border-gray-200 px-3 py-2">
+      <div class="flex items-center gap-1 flex-wrap" id="cat-legend"></div>
+    </div>
+
+    <!-- 表示切替タブ -->
+    <div class="bg-white rounded-2xl shadow border border-gray-200 overflow-hidden">
+      <div class="flex border-b border-gray-100">
+        <button id="tab-cal" onclick="switchView('cal')"
+          class="flex-1 text-xs font-bold py-2.5 transition-colors text-red-500 border-b-2 border-red-500">
+          📅 カレンダー
+        </button>
+        <button id="tab-list" onclick="switchView('list')"
+          class="flex-1 text-xs font-bold py-2.5 transition-colors text-gray-400 border-b-2 border-transparent">
+          📋 リスト
+        </button>
+      </div>
+    </div>
+
+    <!-- カレンダービュー -->
+    <div id="view-cal">
+      <div class="bg-white rounded-2xl shadow border border-gray-200 overflow-hidden">
+        <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+          <h2 id="cal-month-label" class="text-xl font-black text-gray-800 tracking-tight"></h2>
+          <div class="flex items-center gap-1">
+            <button onclick="changeMonth(-1)" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 text-xl">‹</button>
+            <button onclick="changeMonth(1)"  class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 text-xl">›</button>
+            <button onclick="goToday()" class="ml-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold px-2.5 py-1.5 rounded-lg">今日</button>
+          </div>
+        </div>
+        <div class="cal-grid border-b border-gray-100">
+          <div class="text-center text-xs font-bold text-red-500 py-2">日</div>
+          <div class="text-center text-xs font-bold text-gray-500 py-2">月</div>
+          <div class="text-center text-xs font-bold text-gray-500 py-2">火</div>
+          <div class="text-center text-xs font-bold text-gray-500 py-2">水</div>
+          <div class="text-center text-xs font-bold text-gray-500 py-2">木</div>
+          <div class="text-center text-xs font-bold text-gray-500 py-2">金</div>
+          <div class="text-center text-xs font-bold text-blue-500 py-2">土</div>
+        </div>
+        <div id="cal-body" class="cal-grid"></div>
+      </div>
+    </div>
+
+    <!-- リストビュー -->
+    <div id="view-list" class="hidden space-y-2">
+      <div class="bg-white rounded-2xl shadow border border-gray-200 overflow-hidden">
+        <div class="flex items-center justify-between px-4 py-3">
+          <h2 id="list-month-label" class="text-xl font-black text-gray-800 tracking-tight"></h2>
+          <div class="flex items-center gap-1">
+            <button onclick="changeMonth(-1)" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 text-xl">‹</button>
+            <button onclick="changeMonth(1)"  class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 text-xl">›</button>
+            <button onclick="goToday()" class="ml-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold px-2.5 py-1.5 rounded-lg">今日</button>
+          </div>
+        </div>
+      </div>
+      <div id="list-body"></div>
+    </div>
+
+  </main>
+
+  <footer class="pb-4">
+    <div class="max-w-[750px] mx-auto px-4">
+      <div class="py-6 text-center bg-gradient-to-r from-red-700 to-red-600 text-white rounded-xl shadow-lg">
+        <p class="text-xs text-white/90">© ATTENDANCE MANAGEMENT SYSTEM — デモ</p>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<!-- ══ イベント詳細モーダル ══════════════════════════════════════════════ -->
+<div id="detail-modal" class="fixed inset-0 z-[100] hidden">
+  <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onclick="closeDetail()"></div>
+  <div class="absolute inset-4 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-full md:max-w-sm bg-white rounded-2xl shadow-2xl overflow-auto max-h-full">
+    <div class="bg-gradient-to-r from-red-700 to-red-600 text-white px-5 py-4 rounded-t-2xl">
+      <div class="flex items-start justify-between gap-2">
+        <div class="min-w-0">
+          <span id="detail-cat-badge" class="hidden text-[11px] font-black px-2 py-0.5 rounded-full bg-white/20 text-white mb-1 inline-block"></span>
+          <h2 id="detail-title" class="text-base font-black text-white leading-snug"></h2>
+        </div>
+        <button onclick="closeDetail()" class="text-white/70 hover:text-white text-xl leading-none shrink-0 ml-1">×</button>
+      </div>
+      <div id="detail-info" class="space-y-0.5 text-xs text-white/80 mt-1"></div>
+    </div>
+    <div id="detail-memo" class="hidden mx-3 mt-3 bg-amber-50 rounded-lg px-2.5 py-1.5 text-amber-800 text-xs"></div>
+    <div class="p-3 space-y-2">
+      <!-- ファミリーボタン -->
+      <div class="grid grid-cols-2 gap-2">
+        <button onclick="openRespond()"
+          class="flex items-center justify-center gap-1 bg-red-500 hover:bg-red-600 text-white font-black py-2.5 rounded-xl text-sm transition-colors">
+          ✏️ 回答する
+        </button>
+        <button onclick="openResults()"
+          class="flex items-center justify-center gap-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 rounded-xl text-sm transition-colors">
+          📊 結果を見る
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 回答モーダル ══════════════════════════════════════════════════════ -->
+<div id="respond-modal" class="fixed inset-0 z-[110] hidden">
+  <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onclick="closeRespond()"></div>
+  <div class="absolute inset-4 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-full md:max-w-sm bg-white rounded-2xl shadow-2xl overflow-auto max-h-full">
+    <div class="bg-gradient-to-r from-red-700 to-red-600 text-white px-5 py-4 rounded-t-2xl flex items-center justify-between">
+      <div>
+        <h2 class="text-lg font-black">✏️ 出欠回答</h2>
+        <p id="respond-event-name" class="text-sm text-white/80 mt-0.5"></p>
+      </div>
+      <button onclick="closeRespond()" class="text-white/70 hover:text-white text-2xl leading-none ml-3">×</button>
+    </div>
+    <div class="p-5 space-y-4">
+
+      <!-- デモ注記 -->
+      <div class="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-amber-700 text-xs font-bold">
+        🎯 デモモード — 送信ボタンを押しても実際には登録されません
+      </div>
+
+      <!-- 選手名 -->
+      <div>
+        <label class="block text-gray-700 text-sm font-bold mb-1">お子さんのお名前 <span class="text-red-500">*</span></label>
+        <input id="respond-name" type="text" placeholder="例：田中 太郎"
+          class="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-500 text-sm">
+      </div>
+
+      <!-- 出欠 -->
+      <div>
+        <label class="block text-gray-700 text-sm font-bold mb-2">出席・欠席 <span class="text-red-500">*</span></label>
+        <div class="grid grid-cols-2 gap-2">
+          <button class="cal-radio-btn" data-color="green" data-group="attend" onclick="selectRadio(this, 'attend')" data-value="出席">✅ 出席</button>
+          <button class="cal-radio-btn" data-color="red"   data-group="attend" onclick="selectRadio(this, 'attend')" data-value="欠席">❌ 欠席</button>
+        </div>
+      </div>
+
+      <!-- 送迎 -->
+      <div>
+        <label class="block text-gray-700 text-sm font-bold mb-2">送迎</label>
+        <div class="grid grid-cols-3 gap-2">
+          <button class="cal-radio-btn" data-color="blue"  data-group="ride" onclick="selectRadio(this, 'ride')" data-value="乗せてほしい">🙋 乗せて<br>ほしい</button>
+          <button class="cal-radio-btn" data-color="amber" data-group="ride" onclick="selectRadio(this, 'ride')" data-value="乗せていける">🚗 乗せて<br>いける</button>
+          <button class="cal-radio-btn" data-color="gray"  data-group="ride" onclick="selectRadio(this, 'ride')" data-value="自己送迎">👟 自己<br>送迎</button>
+        </div>
+      </div>
+
+      <!-- コメント -->
+      <div>
+        <label class="block text-gray-700 text-sm font-bold mb-1">コメント（任意）</label>
+        <textarea id="respond-comment" rows="2" placeholder="遅刻します / 早退します など"
+          class="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-500 text-sm resize-none"></textarea>
+      </div>
+
+      <div id="respond-status" class="hidden text-sm font-bold px-3 py-2 rounded-lg"></div>
+
+      <button onclick="submitRespond()"
+        class="w-full bg-red-500 hover:bg-red-600 text-white font-black py-3.5 rounded-xl transition-colors">
+        <span id="respond-btn-text">回答を送信</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 結果モーダル ══════════════════════════════════════════════════════ -->
+<div id="results-modal" class="fixed inset-0 z-[110] hidden">
+  <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onclick="closeResults()"></div>
+  <div class="absolute inset-4 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-full md:max-w-lg bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden" style="max-height:calc(100vh - 2rem)">
+    <div class="bg-gradient-to-r from-red-700 to-red-600 text-white px-5 py-4 rounded-t-2xl flex items-start justify-between shrink-0">
+      <div>
+        <h2 class="text-lg font-black">📊 回答結果</h2>
+        <p id="results-event-name" class="text-sm text-white/80 mt-0.5"></p>
+      </div>
+      <button onclick="closeResults()" class="text-white/70 hover:text-white text-2xl leading-none ml-3">×</button>
+    </div>
+    <!-- 集計 -->
+    <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 shrink-0">
+      <div class="grid grid-cols-3 gap-2 text-center">
+        <div class="bg-white rounded-xl p-2.5 shadow-sm">
+          <p class="text-xs text-gray-400 pb-1">回答数</p>
+          <p id="res-total" class="text-xl font-black text-gray-700">0</p>
+        </div>
+        <div class="bg-green-50 rounded-xl p-2.5">
+          <p class="text-xs text-gray-400 pb-1">出席</p>
+          <p id="res-attend" class="text-xl font-black text-green-600">0</p>
+        </div>
+        <div class="bg-red-50 rounded-xl p-2.5">
+          <p class="text-xs text-gray-400 pb-1">欠席</p>
+          <p id="res-absent" class="text-xl font-black text-red-500">0</p>
+        </div>
+      </div>
+    </div>
+    <!-- 回答一覧 -->
+    <div class="overflow-y-auto flex-1 p-4 space-y-2" id="results-body"></div>
+  </div>
+</div>
+
+<script>
+// ─── ダミーデータ ────────────────────────────────────────────────────────
+const CATEGORIES = [
+  { id: 'U10', label: 'U10', color: '#e74c3c' },
+  { id: 'U11', label: 'U11', color: '#2980b9' },
+  { id: 'U12', label: 'U12', color: '#27ae60' },
+  { id: 'all', label: '全体', color: '#8e44ad' },
+];
+
+const EVENTS = [
+  { id: 1, title: '練習試合 vs FC東大阪',   cat: 'U10', date: '2026-06-07', time: '午前 9:00〜12:00', place: '甲子園前グラウンド',  memo: '駐車場あり。ビブス持参のこと。' },
+  { id: 2, title: '水曜練習',               cat: 'U11', date: '2026-06-10', time: '午後 17:00〜19:00', place: '市民グラウンドB面',   memo: '' },
+  { id: 3, title: 'U10 トーナメント大会',   cat: 'U10', date: '2026-06-14', time: '午前 8:30〜',       place: '県立競技場 第2グラウンド', memo: '弁当持参。保護者の入場は無料です。' },
+  { id: 4, title: '土曜合同練習',           cat: 'all', date: '2026-06-21', time: '午前 10:00〜12:00', place: 'トレーニングセンター', memo: '' },
+  { id: 5, title: '練習試合 vs 灘FC',       cat: 'U11', date: '2026-06-28', time: '午前 10:00〜13:00', place: 'グラウンドB',          memo: '集合は9:45。ユニフォーム着用。' },
+  { id: 6, title: 'U12 練習',              cat: 'U12', date: '2026-07-05', time: '午後 16:00〜18:00', place: '市民グラウンドA面',   memo: '' },
+  { id: 7, title: '全体保護者ミーティング', cat: 'all', date: '2026-07-12', time: '午後 19:00〜20:30', place: 'クラブハウス 会議室',  memo: '年間スケジュールの確認があります。' },
+];
+
+const DUMMY_RESPONSES = {
+  1: [
+    { name: '田中 太郎',   attend: '出席', ride: '乗せてほしい', comment: '' },
+    { name: '山本 健太',   attend: '出席', ride: '乗せていける', comment: '3名乗れます' },
+    { name: '佐藤 翔',     attend: '欠席', ride: '',             comment: '家族の用事があります' },
+    { name: '鈴木 一郎',   attend: '出席', ride: '自己送迎',    comment: '' },
+    { name: '高橋 勇',     attend: '出席', ride: '乗せていける', comment: '2名乗れます' },
+    { name: '伊藤 大輝',   attend: '出席', ride: '乗せてほしい', comment: '' },
+  ],
+  2: [
+    { name: '中村 蓮',     attend: '出席', ride: '自己送迎',    comment: '' },
+    { name: '小林 颯',     attend: '出席', ride: '自己送迎',    comment: '' },
+    { name: '加藤 誠',     attend: '欠席', ride: '',             comment: '習い事と重なっています' },
+    { name: '吉田 海斗',   attend: '出席', ride: '乗せてほしい', comment: '' },
+  ],
+  3: [
+    { name: '田中 太郎',   attend: '出席', ride: '乗せてほしい', comment: '' },
+    { name: '鈴木 一郎',   attend: '出席', ride: '乗せていける', comment: '2名乗せられます' },
+    { name: '高橋 勇',     attend: '出席', ride: '自己送迎',    comment: '' },
+  ],
+};
+
+// ─── 状態 ────────────────────────────────────────────────────────────────
+let currentMonth = new Date(2026, 5, 1); // 2026年6月
+let currentEvent = null;
+let currentView  = 'cal';
+let selectedAttend = '';
+let selectedRide   = '';
+let activeCats = new Set(CATEGORIES.map(c => c.id));
+
+// ─── 初期化 ──────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  renderCatLegend();
+  renderCalendar();
+  renderList();
+});
+
+function renderCatLegend() {
+  const el = document.getElementById('cat-legend');
+  el.innerHTML = CATEGORIES.map(c => `
+    <button onclick="toggleCat('${c.id}')" data-cat="${c.id}"
+      class="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold border-2 transition-all"
+      style="border-color:${c.color}; background:${c.color}20; color:${c.color}">
+      <span class="w-2 h-2 rounded-full inline-block" style="background:${c.color}"></span>${c.label}
+    </button>
+  `).join('');
+}
+
+function toggleCat(id) {
+  if (activeCats.has(id)) { activeCats.delete(id); } else { activeCats.add(id); }
+  document.querySelectorAll(`[data-cat="${id}"]`).forEach(btn => {
+    const c = CATEGORIES.find(c => c.id === id);
+    if (activeCats.has(id)) {
+      btn.style.background = c.color + '20';
+      btn.style.color = c.color;
+      btn.style.borderColor = c.color;
+    } else {
+      btn.style.background = '#f3f4f6';
+      btn.style.color = '#9ca3af';
+      btn.style.borderColor = '#e5e7eb';
+    }
+  });
+  renderCalendar();
+  renderList();
+}
+
+function switchView(v) {
+  currentView = v;
+  document.getElementById('view-cal').classList.toggle('hidden', v !== 'cal');
+  document.getElementById('view-list').classList.toggle('hidden', v !== 'list');
+  document.getElementById('tab-cal').className  = 'flex-1 text-xs font-bold py-2.5 transition-colors ' + (v === 'cal'  ? 'text-red-500 border-b-2 border-red-500'  : 'text-gray-400 border-b-2 border-transparent');
+  document.getElementById('tab-list').className = 'flex-1 text-xs font-bold py-2.5 transition-colors ' + (v === 'list' ? 'text-red-500 border-b-2 border-red-500' : 'text-gray-400 border-b-2 border-transparent');
+}
+
+function changeMonth(d) {
+  currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + d, 1);
+  renderCalendar();
+  renderList();
+}
+
+function goToday() {
+  currentMonth = new Date(2026, 5, 1);
+  renderCalendar();
+  renderList();
+}
+
+function monthLabel() {
+  return `${currentMonth.getFullYear()}年${currentMonth.getMonth() + 1}月`;
+}
+
+function getCatColor(catId) {
+  return CATEGORIES.find(c => c.id === catId)?.color || '#888';
+}
+
+function filteredEvents() {
+  return EVENTS.filter(e => activeCats.has(e.cat));
+}
+
+// ─── カレンダー描画 ───────────────────────────────────────────────────────
+function renderCalendar() {
+  document.getElementById('cal-month-label').textContent = monthLabel();
+  const y = currentMonth.getFullYear();
+  const m = currentMonth.getMonth();
+  const first = new Date(y, m, 1).getDay();
+  const last  = new Date(y, m + 1, 0).getDate();
+  const today = new Date();
+
+  const eventsThisMonth = filteredEvents().filter(e => {
+    const d = new Date(e.date);
+    return d.getFullYear() === y && d.getMonth() === m;
+  });
+
+  let html = '';
+  for (let i = 0; i < first; i++) html += '<div class="cal-day border-r border-b border-gray-100 p-1"></div>';
+
+  for (let d = 1; d <= last; d++) {
+    const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dow = new Date(y, m, d).getDay();
+    const isToday = today.getFullYear()===y && today.getMonth()===m && today.getDate()===d;
+    const dayEvents = eventsThisMonth.filter(e => e.date === dateStr);
+
+    const numColor = dow===0 ? 'text-red-500' : dow===6 ? 'text-blue-500' : 'text-gray-700';
+    const todayBg  = isToday ? 'bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center mx-auto' : '';
+
+    html += `<div class="cal-day border-r border-b border-gray-100 p-1 cursor-default">
+      <div class="text-xs font-bold ${isToday ? '' : numColor} text-center mb-0.5">
+        <span class="${todayBg}">${d}</span>
+      </div>`;
+    dayEvents.forEach(ev => {
+      html += `<span class="event-pill" style="background:${getCatColor(ev.cat)}" onclick="openDetail(${ev.id})">${ev.title}</span>`;
+    });
+    html += '</div>';
+  }
+  const remain = (7 - (first + last) % 7) % 7;
+  for (let i = 0; i < remain; i++) html += '<div class="cal-day border-r border-b border-gray-100 p-1"></div>';
+
+  document.getElementById('cal-body').innerHTML = html;
+}
+
+// ─── リスト描画 ───────────────────────────────────────────────────────────
+function renderList() {
+  document.getElementById('list-month-label').textContent = monthLabel();
+  const y = currentMonth.getFullYear();
+  const m = currentMonth.getMonth();
+
+  const eventsThisMonth = filteredEvents()
+    .filter(e => { const d = new Date(e.date); return d.getFullYear()===y && d.getMonth()===m; })
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  if (!eventsThisMonth.length) {
+    document.getElementById('list-body').innerHTML = `<div class="text-center text-gray-400 text-sm py-10 bg-white rounded-2xl">この月のイベントはありません</div>`;
+    return;
+  }
+
+  document.getElementById('list-body').innerHTML = eventsThisMonth.map(ev => {
+    const d = new Date(ev.date);
+    const DOW = ['日','月','火','水','木','金','土'][d.getDay()];
+    const dowColor = d.getDay()===0 ? 'text-red-500' : d.getDay()===6 ? 'text-blue-500' : 'text-gray-500';
+    const catLabel = CATEGORIES.find(c => c.id === ev.cat)?.label || ev.cat;
+    return `
+    <div onclick="openDetail(${ev.id})" class="bg-white rounded-2xl shadow border border-gray-200 px-4 py-3 flex gap-3 items-start cursor-pointer hover:shadow-md transition-shadow">
+      <div class="shrink-0 text-center w-10">
+        <div class="text-lg font-black text-gray-800">${d.getDate()}</div>
+        <div class="text-xs font-bold ${dowColor}">${DOW}</div>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 mb-0.5">
+          <span class="text-[10px] font-black px-1.5 py-0.5 rounded-full text-white shrink-0" style="background:${getCatColor(ev.cat)}">${catLabel}</span>
+          <span class="text-sm font-black text-gray-800 truncate">${ev.title}</span>
+        </div>
+        <div class="text-xs text-gray-500">${ev.time}　📍 ${ev.place}</div>
+      </div>
+      <div class="shrink-0 text-gray-300 text-lg">›</div>
+    </div>`;
+  }).join('');
+}
+
+// ─── イベント詳細 ─────────────────────────────────────────────────────────
+function openDetail(id) {
+  const ev = EVENTS.find(e => e.id === id);
+  if (!ev) return;
+  currentEvent = ev;
+
+  const d = new Date(ev.date);
+  const DOW = ['日','月','火','水','木','金','土'][d.getDay()];
+  const catLabel = CATEGORIES.find(c => c.id === ev.cat)?.label || ev.cat;
+
+  const badge = document.getElementById('detail-cat-badge');
+  badge.textContent = catLabel;
+  badge.classList.remove('hidden');
+  badge.style.background = getCatColor(ev.cat) + '33';
+
+  document.getElementById('detail-title').textContent = ev.title;
+  document.getElementById('detail-info').innerHTML = `
+    <div>📅 ${ev.date.replace(/-/g,'/')}（${DOW}）</div>
+    <div>🕐 ${ev.time}</div>
+    <div>📍 ${ev.place}</div>
+  `;
+
+  const memo = document.getElementById('detail-memo');
+  if (ev.memo) {
+    memo.textContent = '📝 ' + ev.memo;
+    memo.classList.remove('hidden');
+  } else {
+    memo.classList.add('hidden');
+  }
+
+  document.getElementById('detail-modal').classList.remove('hidden');
+}
+
+function closeDetail() {
+  document.getElementById('detail-modal').classList.add('hidden');
+  currentEvent = null;
+}
+
+// ─── 回答モーダル ─────────────────────────────────────────────────────────
+function openRespond() {
+  if (!currentEvent) return;
+  closeDetail();
+  const ev = currentEvent;
+  document.getElementById('respond-event-name').textContent = ev.title + '　' + ev.date.replace(/-/g,'/');
+  document.getElementById('respond-name').value = '';
+  document.getElementById('respond-comment').value = '';
+  document.querySelectorAll('.cal-radio-btn').forEach(b => b.removeAttribute('data-selected'));
+  selectedAttend = '';
+  selectedRide   = '';
+  const st = document.getElementById('respond-status');
+  st.classList.add('hidden');
+  document.getElementById('respond-btn-text').textContent = '回答を送信';
+  document.getElementById('respond-modal').classList.remove('hidden');
+}
+
+function closeRespond() {
+  document.getElementById('respond-modal').classList.add('hidden');
+  currentEvent = null;
+}
+
+function selectRadio(btn, group) {
+  document.querySelectorAll(`[data-group="${group}"]`).forEach(b => b.removeAttribute('data-selected'));
+  btn.setAttribute('data-selected', '1');
+  if (group === 'attend') selectedAttend = btn.dataset.value;
+  if (group === 'ride')   selectedRide   = btn.dataset.value;
+}
+
+function submitRespond() {
+  const name = document.getElementById('respond-name').value.trim();
+  const st   = document.getElementById('respond-status');
+  if (!name) {
+    st.className = 'text-sm font-bold px-3 py-2 rounded-lg bg-red-50 text-red-600 border border-red-200';
+    st.textContent = '⚠️ お子さんのお名前を入力してください';
+    st.classList.remove('hidden'); return;
+  }
+  if (!selectedAttend) {
+    st.className = 'text-sm font-bold px-3 py-2 rounded-lg bg-red-50 text-red-600 border border-red-200';
+    st.textContent = '⚠️ 出席・欠席を選択してください';
+    st.classList.remove('hidden'); return;
+  }
+  document.getElementById('respond-btn-text').textContent = '送信中…';
+  setTimeout(() => {
+    st.className = 'text-sm font-bold px-3 py-2 rounded-lg bg-amber-50 text-amber-700 border border-amber-200';
+    st.textContent = '🎯 デモモードのため実際には送信されません';
+    st.classList.remove('hidden');
+    document.getElementById('respond-btn-text').textContent = '回答を送信';
+  }, 800);
+}
+
+// ─── 結果モーダル ─────────────────────────────────────────────────────────
+function openResults() {
+  if (!currentEvent) return;
+  closeDetail();
+  const ev = currentEvent;
+  document.getElementById('results-event-name').textContent = ev.title + '　' + ev.date.replace(/-/g,'/');
+
+  const responses = DUMMY_RESPONSES[ev.id] || [
+    { name: 'サンプル 太郎', attend: '出席', ride: '自己送迎', comment: '' },
+    { name: 'サンプル 花子', attend: '出席', ride: '乗せてほしい', comment: '' },
+  ];
+
+  const total   = responses.length;
+  const attend  = responses.filter(r => r.attend === '出席').length;
+  const absent  = responses.filter(r => r.attend === '欠席').length;
+
+  document.getElementById('res-total').textContent  = total;
+  document.getElementById('res-attend').textContent = attend;
+  document.getElementById('res-absent').textContent = absent;
+
+  const rideIcon  = r => r.ride === '乗せてほしい' ? '🙋' : r.ride === '乗せていける' ? '🚗' : r.ride === '自己送迎' ? '👟' : '';
+  const attendBg  = r => r.attend === '出席' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600';
+
+  document.getElementById('results-body').innerHTML = responses.map(r => `
+    <div class="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3">
+      <div class="flex items-center justify-between gap-2">
+        <span class="font-bold text-sm text-gray-800">${r.name}</span>
+        <span class="text-xs font-bold px-2 py-0.5 rounded-full ${attendBg(r)}">${r.attend}</span>
+      </div>
+      ${r.ride ? `<div class="text-xs text-gray-500 mt-1">${rideIcon(r)} ${r.ride}</div>` : ''}
+      ${r.comment ? `<div class="text-xs text-gray-400 mt-1">💬 ${r.comment}</div>` : ''}
+    </div>
+  `).join('');
+
+  document.getElementById('results-modal').classList.remove('hidden');
+}
+
+function closeResults() {
+  document.getElementById('results-modal').classList.add('hidden');
+  currentEvent = null;
+}
+</script>
+</body>
+</html>

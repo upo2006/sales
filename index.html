@@ -1,0 +1,1256 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>チーム管理システム｜少年サッカーチーム向け 試合記録・出欠管理アプリ</title>
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="チーム管理システム" />
+  <meta property="og:description" content="少年サッカーチーム向けの試合記録・出欠管理アプリ。シンプルな操作でチーム運営をサポート。" />
+  <meta name="description" content="少年サッカーチーム向けの試合記録・出欠管理アプリ。シンプルな操作でチーム運営をサポート。" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Oswald:wght@700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    :root {
+      --red:        #c0392b;
+      --red-dark:   #922b21;
+      --red-light:  #e74c3c;
+      --red-pale:   #fff5f5;
+      --text:       #1a1a1a;
+      --text-mid:   #555;
+      --text-light: #999;
+      --bg:         #fff;
+      --bg-alt:     #f8f7f5;
+      --border:     #e8e8e6;
+      --shadow:     0 4px 20px rgba(0,0,0,0.07);
+      --shadow-lg:  0 8px 40px rgba(0,0,0,0.12);
+    }
+
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    /* ─── NAV ─── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px;
+      background: rgba(255,255,255,0.94);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo {
+      font-family: 'Oswald', sans-serif;
+      font-size: 1rem;
+      letter-spacing: 0.08em;
+      color: var(--text);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .nav-logo .red { color: var(--red); }
+    .nav-cta {
+      background: var(--red);
+      color: #fff;
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 10px 18px;
+      border-radius: 4px;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    /* ─── HERO ─── */
+    .hero {
+      padding: 100px 20px 56px;
+      text-align: center;
+      background: linear-gradient(180deg, #fff 0%, var(--bg-alt) 100%);
+      position: relative;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 4px;
+      background: linear-gradient(to right, var(--red-dark), var(--red-light));
+    }
+    .hero-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--red-pale);
+      border: 1px solid rgba(192,57,43,0.2);
+      color: var(--red);
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      padding: 6px 14px;
+      border-radius: 100px;
+      margin-bottom: 24px;
+    }
+    .hero h1 {
+      font-family: 'Oswald', sans-serif;
+      font-size: clamp(2.2rem, 9vw, 5rem);
+      font-weight: 700;
+      line-height: 1.1;
+      margin-bottom: 16px;
+      letter-spacing: -0.01em;
+    }
+    .hero h1 .accent { color: var(--red); }
+    .hero-sub {
+      font-size: 0.97rem;
+      color: var(--text-mid);
+      line-height: 1.9;
+      margin-bottom: 32px;
+      max-width: 480px;
+      margin-left: auto; margin-right: auto;
+    }
+    .hero-btns {
+      display: flex; flex-direction: column; gap: 10px; align-items: center;
+      margin-bottom: 20px;
+    }
+    .btn-main {
+      background: var(--red);
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 16px 36px;
+      border-radius: 4px;
+      text-decoration: none;
+      width: 100%; max-width: 320px;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(192,57,43,0.3);
+    }
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-mid);
+      font-size: 0.95rem;
+      font-weight: 500;
+      padding: 14px 32px;
+      border-radius: 4px;
+      text-decoration: none;
+      border: 1px solid var(--border);
+      width: 100%; max-width: 320px;
+      text-align: center;
+    }
+    .hero-note { font-size: 0.75rem; color: var(--text-light); }
+
+    .hero-plans {
+      display: flex; flex-direction: column; gap: 8px;
+      margin-top: 40px; align-items: center;
+    }
+    .plan-chip {
+      display: flex; align-items: center; gap: 10px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      width: 100%; max-width: 320px;
+      box-shadow: var(--shadow);
+    }
+    .plan-chip.featured { border-color: rgba(192,57,43,0.4); background: var(--red-pale); }
+    .plan-chip .ci { font-size: 1.4rem; }
+    .plan-chip .cn { font-size: 0.9rem; font-weight: 700; }
+    .plan-chip.featured .cn { color: var(--red); }
+    .plan-chip .cp { font-size: 0.72rem; color: var(--text-light); margin-left: auto; }
+
+    /* ─── ORIGIN ─── */
+    .origin { background: var(--red); padding: 40px 20px; }
+    .origin p {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: rgba(255,255,255,0.95);
+      line-height: 2;
+      text-align: center;
+      max-width: 640px;
+      margin: 0 auto;
+    }
+    .origin p span {
+      color: #ffd6d6;
+      background: rgba(255,255,255,0.12);
+      padding: 1px 8px;
+      border-radius: 4px;
+    }
+
+    /* ─── SECTION BASE ─── */
+    section { padding: 64px 20px; }
+    .container { max-width: 960px; margin: 0 auto; }
+    .sec-label {
+      font-size: 0.65rem; font-weight: 700;
+      letter-spacing: 0.28em; text-transform: uppercase;
+      color: var(--red); margin-bottom: 10px;
+    }
+    .sec-title {
+      font-family: 'Oswald', sans-serif;
+      font-size: clamp(1.6rem, 5vw, 2.6rem);
+      font-weight: 700; line-height: 1.15;
+      color: var(--text); margin-bottom: 14px;
+    }
+    .sec-desc {
+      font-size: 0.93rem; color: var(--text-mid);
+      line-height: 1.9; max-width: 560px;
+    }
+
+    /* ─── PAIN ─── */
+    .pain { background: var(--bg-alt); }
+    .pain-grid {
+      display: flex; flex-direction: column; gap: 12px;
+      margin-top: 32px;
+    }
+    .pain-card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 20px;
+      border-left: 4px solid var(--red);
+      box-shadow: var(--shadow);
+      display: flex; gap: 14px; align-items: flex-start;
+    }
+    .pain-card .icon { font-size: 1.8rem; flex-shrink: 0; margin-top: 2px; }
+    .pain-card h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 6px; }
+    .pain-card p { font-size: 0.82rem; color: var(--text-mid); line-height: 1.75; }
+
+    /* ─── APP HEADER ─── */
+    .app-header {
+      display: flex; align-items: flex-start; gap: 16px; margin-bottom: 28px;
+    }
+    .app-icon-badge {
+      width: 56px; height: 56px; flex-shrink: 0;
+      background: var(--red-pale);
+      border: 2px solid rgba(192,57,43,0.15);
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem;
+    }
+
+    /* ─── APPEAL BLOCK ─── */
+    .appeal-block {
+      background: linear-gradient(135deg, var(--red-pale), #fff8f5);
+      border: 1px solid rgba(192,57,43,0.15);
+      border-radius: 12px;
+      padding: 24px 20px;
+      margin-bottom: 28px;
+    }
+    .appeal-block .quote {
+      font-size: 1rem; font-weight: 900;
+      color: var(--text); line-height: 1.75; margin-bottom: 10px;
+    }
+    .appeal-block .quote .hl { color: var(--red); }
+    .appeal-block .sub { font-size: 0.85rem; color: var(--text-mid); line-height: 1.8; }
+
+    /* ─── FEATURES ─── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px; margin-top: 20px;
+    }
+    .feature-card {
+      background: #fff; border: 1px solid var(--border);
+      border-radius: 10px; padding: 16px 14px;
+    }
+    .feature-card .f-icon { font-size: 1.5rem; margin-bottom: 8px; display: block; }
+    .feature-card h3 { font-size: 0.88rem; font-weight: 700; margin-bottom: 6px; }
+    .feature-card p { font-size: 0.78rem; color: var(--text-mid); line-height: 1.7; }
+
+    /* ─── PHONE MOCKUPS ─── */
+    .screens-section { background: var(--bg-alt); }
+    .screens-label {
+      font-size: 0.65rem; font-weight: 700;
+      letter-spacing: 0.28em; text-transform: uppercase;
+      color: var(--red); margin-bottom: 10px;
+    }
+    .phones-scroll {
+      display: flex; gap: 16px;
+      overflow-x: auto; padding: 16px 4px 24px;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .phones-scroll::-webkit-scrollbar { display: none; }
+    .phone-wrap {
+      flex-shrink: 0; scroll-snap-align: start;
+      display: flex; flex-direction: column; align-items: center; gap: 12px;
+    }
+    .phone-label {
+      font-size: 0.78rem; font-weight: 700; color: var(--text-mid);
+      text-align: center;
+    }
+    .phone {
+      width: 200px;
+      background: #1a1a1a;
+      border-radius: 32px;
+      padding: 10px;
+      box-shadow: 0 12px 48px rgba(0,0,0,0.25), inset 0 0 0 1px rgba(255,255,255,0.1);
+    }
+    .phone-notch {
+      background: #1a1a1a;
+      height: 18px;
+      display: flex; justify-content: center; align-items: center;
+      margin-bottom: 4px;
+    }
+    .phone-notch span {
+      width: 56px; height: 10px;
+      background: #333; border-radius: 10px;
+    }
+    .phone-inner {
+      background: #fff; border-radius: 22px; overflow: hidden;
+      min-height: 380px;
+    }
+    /* App Screen Styles */
+    .app-bar {
+      background: var(--red);
+      padding: 10px 12px;
+      color: #fff;
+    }
+    .app-bar .ab-title { font-size: 0.75rem; font-weight: 900; letter-spacing: 0.05em; }
+    .app-bar .ab-sub { font-size: 0.62rem; opacity: 0.8; margin-top: 2px; }
+    .app-content { padding: 10px; background: #f8f7f5; min-height: 346px; }
+    .app-tab-bar {
+      display: flex; border-bottom: 1px solid #e8e8e6; background: #fff; margin-bottom: 8px;
+    }
+    .app-tab {
+      flex: 1; text-align: center;
+      font-size: 0.55rem; font-weight: 700;
+      padding: 6px 4px; color: var(--text-light);
+    }
+    .app-tab.active { color: var(--red); border-bottom: 2px solid var(--red); }
+
+    /* Ranking screen */
+    .rank-row {
+      display: flex; align-items: center; gap: 6px;
+      background: #fff; border-radius: 6px; padding: 7px 8px;
+      margin-bottom: 4px; border: 1px solid #f0f0f0;
+    }
+    .rank-num {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.75rem; font-weight: 700;
+      width: 16px; text-align: center; color: var(--text-light);
+      flex-shrink: 0;
+    }
+    .rank-row.gold .rank-num { color: #d4a017; }
+    .rank-row.silver .rank-num { color: #888; }
+    .rank-row.bronze .rank-num { color: #c87941; }
+    .rank-name { font-size: 0.68rem; font-weight: 700; flex: 1; }
+    .rank-score {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.88rem; font-weight: 700; color: var(--red);
+      flex-shrink: 0;
+    }
+    .rank-score span { font-size: 0.5rem; color: var(--text-light); font-family: 'Noto Sans JP', sans-serif; }
+
+    /* Match record screen */
+    .match-header {
+      background: #fff; border-radius: 8px; padding: 10px;
+      margin-bottom: 6px; text-align: center; border: 1px solid #f0f0f0;
+    }
+    .match-score {
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.8rem; font-weight: 700; color: var(--text);
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .match-score .sep { font-size: 1rem; color: var(--text-light); }
+    .match-score .win { color: var(--red); }
+    .match-vs { font-size: 0.6rem; color: var(--text-light); margin-bottom: 4px; }
+    .match-date { font-size: 0.58rem; color: var(--text-light); margin-top: 4px; }
+    .goal-row {
+      display: flex; align-items: center; gap: 6px;
+      background: #fff; border-radius: 6px; padding: 6px 8px;
+      margin-bottom: 3px; font-size: 0.65rem;
+    }
+    .goal-icon { color: var(--red); font-size: 0.7rem; }
+    .goal-name { font-weight: 700; flex: 1; }
+    .goal-time { color: var(--text-light); font-size: 0.58rem; }
+
+    /* Stats screen */
+    .stats-row {
+      display: flex; gap: 6px; margin-bottom: 6px;
+    }
+    .stat-box {
+      flex: 1; background: #fff; border-radius: 8px;
+      padding: 8px 6px; text-align: center; border: 1px solid #f0f0f0;
+    }
+    .stat-val {
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.2rem; font-weight: 700; color: var(--text);
+    }
+    .stat-val.red { color: var(--red); }
+    .stat-lbl { font-size: 0.55rem; color: var(--text-light); margin-top: 2px; }
+    .stat-bar-wrap { background: #f0f0f0; border-radius: 4px; height: 6px; margin-top: 8px; overflow: hidden; }
+    .stat-bar { background: var(--red); height: 100%; border-radius: 4px; }
+
+    /* Attendance screen */
+    .att-event {
+      background: #fff; border-radius: 8px; padding: 10px;
+      margin-bottom: 6px; border: 1px solid #f0f0f0;
+    }
+    .att-event-name { font-size: 0.72rem; font-weight: 900; margin-bottom: 4px; }
+    .att-event-meta { font-size: 0.58rem; color: var(--text-light); }
+    .att-counts {
+      display: flex; gap: 8px; margin-top: 6px;
+    }
+    .att-count {
+      font-size: 0.6rem; font-weight: 700;
+      padding: 3px 8px; border-radius: 4px;
+    }
+    .att-count.yes { background: #e8f5e9; color: #2e7d32; }
+    .att-count.no  { background: #fce4ec; color: #c62828; }
+    .att-count.pending { background: #fff3e0; color: #e65100; }
+    .att-row {
+      display: flex; align-items: center; gap: 6px;
+      background: #fff; border-radius: 6px; padding: 7px 8px;
+      margin-bottom: 3px; border: 1px solid #f0f0f0;
+    }
+    .att-status { font-size: 0.8rem; flex-shrink: 0; }
+    .att-name { font-size: 0.68rem; font-weight: 700; flex: 1; }
+    .att-note { font-size: 0.58rem; color: var(--text-light); }
+
+    /* Car pool screen */
+    .car-group {
+      background: #fff; border-radius: 8px; padding: 8px 10px;
+      margin-bottom: 6px; border: 1px solid #f0f0f0;
+    }
+    .car-driver {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 0.7rem; font-weight: 900; margin-bottom: 6px;
+    }
+    .car-driver .car-icon { font-size: 0.9rem; }
+    .car-passenger {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 0.65rem; color: var(--text-mid);
+      padding-left: 8px; margin-bottom: 3px;
+    }
+    .car-passenger::before { content: '└'; color: var(--text-light); font-size: 0.6rem; }
+
+    /* ─── SCENE CARDS ─── */
+    .scene-grid {
+      display: flex; flex-direction: column; gap: 10px;
+      margin-top: 24px;
+    }
+    .scene-card {
+      background: #fff; border-radius: 10px;
+      padding: 16px; box-shadow: var(--shadow);
+      display: flex; gap: 14px; align-items: flex-start;
+    }
+    .scene-card .si { font-size: 1.8rem; flex-shrink: 0; }
+    .scene-card h4 { font-size: 0.9rem; font-weight: 700; margin-bottom: 4px; }
+    .scene-card p { font-size: 0.8rem; color: var(--text-mid); line-height: 1.7; }
+
+    /* ─── PHILOSOPHY ─── */
+    .philosophy { background: var(--text); padding: 64px 20px; }
+    .philosophy h2 {
+      font-family: 'Oswald', sans-serif;
+      font-size: clamp(1.6rem, 5vw, 2.6rem);
+      color: #fff; font-weight: 700;
+      margin-bottom: 16px; line-height: 1.2; text-align: center;
+    }
+    .philosophy h2 span { color: var(--red-light); }
+    .philosophy .ph-sub {
+      font-size: 0.9rem; color: rgba(255,255,255,0.6);
+      line-height: 1.9; text-align: center;
+      max-width: 580px; margin: 0 auto 40px;
+    }
+    .ph-points {
+      display: flex; flex-direction: column; gap: 12px;
+      max-width: 640px; margin: 0 auto;
+    }
+    .ph-point {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px; padding: 18px 16px;
+      display: flex; gap: 14px; align-items: flex-start;
+    }
+    .ph-num {
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.4rem; color: var(--red-light);
+      font-weight: 700; flex-shrink: 0; line-height: 1;
+    }
+    .ph-point h4 { font-size: 0.92rem; font-weight: 700; color: #fff; margin-bottom: 4px; }
+    .ph-point p { font-size: 0.78rem; color: rgba(255,255,255,0.45); line-height: 1.7; }
+
+    /* ─── HOW IT WORKS ─── */
+    .how { background: var(--bg-alt); }
+    .how-steps {
+      display: flex; flex-direction: column;
+      margin-top: 32px; position: relative;
+    }
+    .how-steps::before {
+      content: '';
+      position: absolute; left: 20px; top: 20px; bottom: 20px;
+      width: 2px;
+      background: linear-gradient(to bottom, var(--red), var(--border));
+    }
+    .how-step {
+      display: flex; gap: 16px;
+      padding: 20px 0; border-bottom: 1px solid var(--border);
+    }
+    .how-step:last-child { border-bottom: none; }
+    .how-num {
+      width: 40px; height: 40px; flex-shrink: 0;
+      background: var(--red); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Oswald', sans-serif;
+      font-size: 1rem; font-weight: 700; color: #fff;
+      position: relative; z-index: 1;
+    }
+    .how-content { padding-top: 4px; }
+    .how-content h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 4px; }
+    .how-content p { font-size: 0.82rem; color: var(--text-mid); line-height: 1.75; }
+    .how-tag {
+      display: inline-block;
+      background: var(--red-pale); color: var(--red);
+      border: 1px solid rgba(192,57,43,0.2);
+      font-size: 0.65rem; font-weight: 700;
+      padding: 3px 10px; border-radius: 100px; margin-top: 8px;
+    }
+
+    /* ─── PRICING ─── */
+    .pricing { background: var(--bg); }
+    .pricing-grid {
+      display: flex; flex-direction: column; gap: 12px;
+      margin-top: 32px; max-width: 400px;
+    }
+    .price-card {
+      background: #fff; border: 2px solid var(--border);
+      border-radius: 12px; padding: 24px 20px; position: relative;
+    }
+    .price-card.featured { border-color: var(--red); }
+    .price-card.featured::before {
+      content: 'おすすめ';
+      position: absolute; top: -1px; right: 14px;
+      background: var(--red); color: #fff;
+      font-size: 0.62rem; font-weight: 900;
+      padding: 4px 12px; border-radius: 0 0 6px 6px;
+    }
+    .price-name { font-size: 0.75rem; font-weight: 700; color: var(--text-light); margin-bottom: 10px; letter-spacing: 0.1em; }
+    .price-amount {
+      font-family: 'Oswald', sans-serif;
+      font-size: 2.4rem; font-weight: 700; color: var(--text);
+      line-height: 1; margin-bottom: 4px;
+    }
+    .price-amount small { font-size: 0.85rem; font-family: 'Noto Sans JP', sans-serif; font-weight: 400; color: var(--text-mid); }
+    .price-note { font-size: 0.72rem; color: var(--text-light); margin-bottom: 16px; }
+    .price-items { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+    .price-items li {
+      font-size: 0.82rem; color: var(--text-mid);
+      display: flex; gap: 8px; align-items: flex-start;
+    }
+    .price-items li::before { content: '✓'; color: var(--red); font-weight: 900; flex-shrink: 0; }
+
+    /* ─── FAQ ─── */
+    .faq { background: var(--bg-alt); }
+    .faq-list { display: flex; flex-direction: column; gap: 8px; margin-top: 32px; }
+    .faq-item {
+      background: #fff; border: 1px solid var(--border);
+      border-radius: 8px; overflow: hidden;
+    }
+    .faq-q {
+      width: 100%; text-align: left; background: none; border: none;
+      color: var(--text); font-family: 'Noto Sans JP', sans-serif;
+      font-size: 0.92rem; font-weight: 700;
+      padding: 18px 20px; cursor: pointer;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      min-height: 56px;
+    }
+    .faq-arrow {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--bg-alt); display: flex; align-items: center; justify-content: center;
+      font-size: 0.85rem; flex-shrink: 0; color: var(--text-mid);
+      transition: transform 0.25s, background 0.15s;
+    }
+    .faq-item.open .faq-arrow { transform: rotate(45deg); background: var(--red); color: #fff; }
+    .faq-a {
+      max-height: 0; overflow: hidden;
+      transition: max-height 0.3s ease, padding 0.3s ease;
+      padding: 0 20px;
+    }
+    .faq-item.open .faq-a { max-height: 300px; padding: 0 20px 18px; }
+    .faq-a p {
+      font-size: 0.85rem; color: var(--text-mid); line-height: 1.85;
+      border-top: 1px solid var(--border); padding-top: 14px;
+    }
+
+    /* ─── CTA ─── */
+    .cta-section {
+      background: linear-gradient(135deg, var(--red-dark), var(--red));
+      text-align: center; padding: 72px 20px;
+      position: relative; overflow: hidden;
+    }
+    .cta-section::before {
+      content: '⚽'; position: absolute;
+      font-size: 14rem; opacity: 0.05;
+      top: 50%; left: 50%; transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+    .cta-section h2 {
+      font-family: 'Oswald', sans-serif;
+      font-size: clamp(1.8rem, 6vw, 3rem);
+      font-weight: 700; color: #fff;
+      line-height: 1.15; margin-bottom: 14px; position: relative;
+    }
+    .cta-section p {
+      font-size: 0.95rem; color: rgba(255,255,255,0.8);
+      margin-bottom: 32px; line-height: 1.8; position: relative;
+    }
+    .btn-white {
+      display: inline-block; background: #fff;
+      color: var(--red-dark); font-size: 1rem; font-weight: 900;
+      padding: 16px 40px; border-radius: 4px; text-decoration: none;
+      position: relative; width: 100%; max-width: 320px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+    .cta-note { margin-top: 14px; font-size: 0.72rem; color: rgba(255,255,255,0.45); position: relative; }
+
+    /* ─── FOOTER ─── */
+    footer { background: var(--text); padding: 32px 20px; text-align: center; }
+    footer p { font-size: 0.72rem; color: rgba(255,255,255,0.3); }
+
+    /* ─── REVEAL ─── */
+    .reveal { opacity: 0; transform: translateY(16px); transition: opacity 0.55s ease, transform 0.55s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* ─── TABLET+ ─── */
+    @media (min-width: 640px) {
+      nav { padding: 16px 40px; }
+      .nav-logo { font-size: 1.1rem; }
+      .hero { padding: 130px 24px 72px; }
+      .hero-btns { flex-direction: row; justify-content: center; }
+      .btn-main, .btn-ghost { width: auto; }
+      .hero-plans { flex-direction: row; justify-content: center; }
+      .plan-chip { width: auto; }
+      section { padding: 88px 24px; }
+      .pain-grid { flex-direction: row; flex-wrap: wrap; }
+      .pain-card { flex: 1 1 240px; flex-direction: column; }
+      .pain-card .icon { margin-bottom: 12px; }
+      .features-grid { grid-template-columns: repeat(3, 1fr); gap: 14px; }
+      .scene-grid { flex-direction: row; flex-wrap: wrap; }
+      .scene-card { flex: 1 1 200px; flex-direction: column; }
+      .ph-points { flex-direction: row; }
+      .ph-point { flex-direction: column; }
+      .pricing-grid { flex-direction: row; max-width: 860px; }
+      .price-card { flex: 1; }
+    }
+
+    @media (min-width: 960px) {
+      .features-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">⚽ <span class="red">MRS</span> チーム管理システム</div>
+  <a href="https://upo2006.github.io/mrs-app/signup.html" class="nav-cta">お申し込み</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-tag">⚽ 少年サッカーチーム向け</div>
+  <h1>記録が、子どもの<br><span class="accent">やる気</span>になる。</h1>
+  <p class="hero-sub">
+    現場のコーチと保護者の目線から生まれた、<br>
+    ちょうどいい機能のチーム管理アプリ。<br>
+    使いやすいから、続けられる。
+  </p>
+  <div class="hero-btns">
+    <a href="https://upo2006.github.io/mrs-app/signup.html" class="btn-main">今すぐ始める →</a>
+    <a href="#features-mrs" class="btn-ghost">アプリを見る</a>
+  </div>
+  <p class="hero-note">月額 ¥800〜（税込）・初期費用なし・いつでも解約可</p>
+  <div class="hero-plans">
+    <div class="plan-chip">
+      <span class="ci">📊</span>
+      <span class="cn">試合記録アプリ</span>
+      <span class="cp">¥800 / 月</span>
+    </div>
+    <div class="plan-chip">
+      <span class="ci">📋</span>
+      <span class="cn">出欠管理アプリ</span>
+      <span class="cp">¥800 / 月</span>
+    </div>
+    <div class="plan-chip featured">
+      <span class="ci">🎯</span>
+      <span class="cn">セットプラン</span>
+      <span class="cp">¥1,000 / 月</span>
+    </div>
+  </div>
+</section>
+
+<!-- ORIGIN -->
+<div class="origin">
+  <p>
+    このアプリは、<span>現役コーチ</span> と <span>サッカー少年の保護者</span> が<br>
+    「本当に欲しかった機能」だけを詰め込んで作りました。<br>
+    多機能より、<span>使いやすさ</span>。それが私たちのこだわりです。
+  </p>
+</div>
+
+<!-- PAIN -->
+<section class="pain">
+  <div class="container">
+    <div class="sec-label reveal">こんなお悩みありませんか？</div>
+    <h2 class="sec-title reveal">試合記録も出欠管理も、<br>まだバラバラですか？</h2>
+    <div class="pain-grid">
+      <div class="pain-card reveal">
+        <div class="icon">📝</div>
+        <div>
+          <h3>記録が紙やLINEに散らばってる</h3>
+          <p>試合のスコアや得点者を後から調べると、どこに書いたか分からなくなる。</p>
+        </div>
+      </div>
+      <div class="pain-card reveal">
+        <div class="icon">📊</div>
+        <div>
+          <h3>子どもの成長を数字で見られない</h3>
+          <p>誰が何点取ったか、シーズン全体でどう成長したか、パッと確認できない。</p>
+        </div>
+      </div>
+      <div class="pain-card reveal">
+        <div class="icon">📅</div>
+        <div>
+          <h3>出欠確認がLINEで毎回大変</h3>
+          <p>「行けます」「送迎お願いします」をLINEで拾い集めるのが毎回手間。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MRS APP -->
+<section class="mrs-section" id="features-mrs" style="background:var(--bg);">
+  <div class="container">
+    <div class="app-header reveal">
+      <div class="app-icon-badge">📊</div>
+      <div>
+        <div class="sec-label">試合記録アプリ · ¥800/月</div>
+        <h2 class="sec-title" style="margin-bottom:0">記録が、子どもの<br>自信とやる気になる。</h2>
+      </div>
+    </div>
+
+    <div class="appeal-block reveal">
+      <div class="quote">
+        試合が終わったあと、子どもが「<span class="hl">ぼく、何点になった？</span>」と<br>
+        アプリをのぞき込んでくる。それだけで、記録する意味がある。
+      </div>
+      <div class="sub">
+        得点ランキングや出場記録が自動で更新されるから、子どもが自分の成長を実感できます。
+        「今日の試合でランキング上がった！」その一言が、次の試合へのモチベーションになります。
+      </div>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature-card reveal">
+        <span class="f-icon">⚽</span>
+        <h3>かんたん試合記録</h3>
+        <p>背番号を入力するだけで選手名が自動で入力。スコア・得点者・出場選手を会場でサッと記録できます。</p>
+      </div>
+      <div class="feature-card reveal">
+        <span class="f-icon">🏆</span>
+        <h3>得点ランキング</h3>
+        <p>年度・通算・月間の3軸で集計。カテゴリー別に絞り込めます。子どもたちのモチベーションが上がります。</p>
+      </div>
+      <div class="feature-card reveal">
+        <span class="f-icon">📈</span>
+        <h3>チーム成績</h3>
+        <p>勝ち・負け・引き分けだけでなく、得点・失点・得失点差も自動集計。カテゴリー別（U10・U11など）でも確認できます。</p>
+      </div>
+      <div class="feature-card reveal">
+        <span class="f-icon">👤</span>
+        <h3>選手個人成績</h3>
+        <p>出場試合数・得点・得点/試合を記録。年度別と通算を切り替えて確認。卒業時には小学校全期間の成績が残ります。</p>
+      </div>
+      <div class="feature-card reveal">
+        <span class="f-icon">👕</span>
+        <h3>選手管理</h3>
+        <p>カテゴリー別の人数を一覧で把握。年度が替わると選手のカテゴリーが自動で更新されます（例：U11→U12）。</p>
+      </div>
+      <div class="feature-card reveal">
+        <span class="f-icon">🗂️</span>
+        <h3>試合カード</h3>
+        <p>試合を日付・カテゴリー別に整理して一覧表示。対戦相手名や選手名で検索でき、その選手が得点・出場した試合もすぐに見つかります。</p>
+      </div>
+      <div class="feature-card reveal">
+        <span class="f-icon">🔗</span>
+        <h3>リンクで簡単共有</h3>
+        <p>リンクを発行してチームで共有。コーチや担当者がすぐにアクセスできます。</p>
+      </div>
+    </div>
+
+    <div class="scene-grid" style="margin-top:32px;">
+      <div class="scene-card reveal">
+        <div class="si">🧒</div>
+        <div>
+          <h4>子どもが成長を実感</h4>
+          <p>得点ランキングや出場記録が可視化されることで、努力の積み重ねが見えてくる。</p>
+        </div>
+      </div>
+      <div class="scene-card reveal">
+        <div class="si">👨‍👩‍👦</div>
+        <div>
+          <h4>家族の話題が増える</h4>
+          <p>「今日ランキング上がった！」試合後の帰り道に子どもが話しかけてくる。</p>
+        </div>
+      </div>
+      <div class="scene-card reveal">
+        <div class="si">📣</div>
+        <div>
+          <h4>コーチの手間が大幅減</h4>
+          <p>記録・集計・管理がすべて自動。子どもたちと向き合う時間を増やせる。</p>
+        </div>
+      </div>
+      <div class="scene-card reveal">
+        <div class="si">🎓</div>
+        <div>
+          <h4>卒業の記念になる</h4>
+          <p>年度・通算の切り替えで6年間の全成績を振り返れる。出場試合数・得点・カテゴリー別成績——子どもへの最高のプレゼント。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MRS SCREENS -->
+<section class="screens-section">
+  <div class="container">
+    <div class="screens-label reveal">試合記録アプリの画面</div>
+    <h2 class="sec-title reveal" style="margin-bottom:8px;">実際の画面を<br>見てみよう。</h2>
+    <p class="sec-desc reveal" style="margin-bottom:0;">横にスクロールして確認できます。</p>
+    <div class="phones-scroll" style="margin-top:24px;">
+
+      <!-- Screen 1: Ranking -->
+      <div class="phone-wrap">
+        <div class="phone">
+          <div class="phone-notch"><span></span></div>
+          <div class="phone-inner" style="min-height:0;">
+            <img src="screen-ranking.jpg" alt="得点ランキング" style="width:100%; height:auto; display:block;">
+          </div>
+        </div>
+        <div class="phone-label">得点ランキング</div>
+      </div>
+
+      <!-- Screen 2: Match card list -->
+      <div class="phone-wrap">
+        <div class="phone">
+          <div class="phone-notch"><span></span></div>
+          <div class="phone-inner" style="min-height:0;">
+            <img src="screen-matchcard.jpg" alt="試合カード" style="width:100%; height:auto; display:block;">
+          </div>
+        </div>
+        <div class="phone-label">試合カード</div>
+      </div>
+
+      <!-- Screen 3: Team stats -->
+      <div class="phone-wrap">
+        <div class="phone">
+          <div class="phone-notch"><span></span></div>
+          <div class="phone-inner" style="min-height:0;">
+            <img src="screen-teamstats.jpg" alt="チーム成績" style="width:100%; height:auto; display:block;">
+          </div>
+        </div>
+        <div class="phone-label">チーム成績</div>
+      </div>
+
+      <!-- Screen 4: Individual player stats -->
+      <div class="phone-wrap">
+        <div class="phone">
+          <div class="phone-notch"><span></span></div>
+          <div class="phone-inner" style="min-height:0;">
+            <img src="screen-playerstats.jpg" alt="選手個人成績" style="width:100%; height:auto; display:block;">
+          </div>
+        </div>
+        <div class="phone-label">選手個人成績</div>
+      </div>
+
+      <!-- Screen 5: Player management -->
+      <div class="phone-wrap">
+        <div class="phone">
+          <div class="phone-notch"><span></span></div>
+          <div class="phone-inner" style="min-height:0;">
+            <img src="screen-players.jpg" alt="選手管理" style="width:100%; height:auto; display:block;">
+          </div>
+        </div>
+        <div class="phone-label">選手管理</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ATTENDANCE APP -->
+<section id="features-attendance" style="background:var(--bg-alt);">
+  <div class="container">
+    <div class="app-header reveal">
+      <div class="app-icon-badge">📋</div>
+      <div>
+        <div class="sec-label">出欠管理アプリ · ¥800/月</div>
+        <h2 class="sec-title" style="margin-bottom:0">「行けます」のやりとり、<br>もうLINEに頼らない。</h2>
+      </div>
+    </div>
+
+    <div class="appeal-block reveal">
+      <div class="quote">
+        練習・試合の出欠確認、送迎の調整——<br>
+        <span class="hl">毎回LINEで流れる情報を拾い集める手間</span>、なくしませんか？
+      </div>
+      <div class="sub">
+        イベントを作成して参加者を登録するだけ。出欠・送迎がひとつの画面で完結します。
+        コーチも保護者も、必要な情報にすぐたどり着けます。
+      </div>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature-card reveal">
+        <span class="f-icon">📅</span>
+        <h3>イベント管理</h3>
+        <p>練習・試合・イベントをまとめて管理。日程・場所・集合時間を一覧で確認できます。</p>
+      </div>
+      <div class="feature-card reveal">
+        <span class="f-icon">✅</span>
+        <h3>出欠確認</h3>
+        <p>参加・欠席・未回答が一目でわかる。回答漏れを素早く把握できます。</p>
+      </div>
+      <div class="feature-card reveal">
+        <span class="f-icon">👥</span>
+        <h3>参加者一覧</h3>
+        <p>当日の参加人数・名前をすぐに把握。急な欠席にも素早く対応できます。</p>
+      </div>
+      <div class="feature-card reveal">
+        <span class="f-icon">🔗</span>
+        <h3>リンクで簡単共有</h3>
+        <p>リンクを発行してチームで共有。コーチや担当者がすぐにアクセスできます。</p>
+      </div>
+      <div class="feature-card reveal">
+        <span class="f-icon">📱</span>
+        <h3>スマホ完結</h3>
+        <p>インストール不要。ブラウザで開くだけで、いつでもどこでも確認・入力できます。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ATTENDANCE SCREENS -->
+<section class="screens-section" style="background:var(--bg);">
+  <div class="container">
+    <div class="screens-label reveal">出欠管理アプリの画面</div>
+    <h2 class="sec-title reveal" style="margin-bottom:8px;">出欠も送迎も<br>ひとつの画面で。</h2>
+    <p class="sec-desc reveal" style="margin-bottom:0;">横にスクロールして確認できます。</p>
+    <div class="phones-scroll" style="margin-top:24px;">
+
+      <!-- Screen 1: Attendance -->
+      <div class="phone-wrap">
+        <div class="phone">
+          <div class="phone-notch"><span></span></div>
+          <div class="phone-inner">
+            <div class="app-bar">
+              <div class="ab-title">出欠確認</div>
+              <div class="ab-sub">6/22 (日) 練習試合</div>
+            </div>
+            <div class="app-content">
+              <div class="att-event">
+                <div class="att-event-name">6/22 練習試合 vs FC西宮</div>
+                <div class="att-event-meta">📍 甲子園球場前グラウンド ｜ 9:00集合</div>
+                <div class="att-counts">
+                  <span class="att-count yes">✅ 参加 8</span>
+                  <span class="att-count no">❌ 欠席 2</span>
+                  <span class="att-count pending">⏳ 未回答 2</span>
+                </div>
+              </div>
+              <div class="att-row">
+                <span class="att-status">✅</span>
+                <span class="att-name">田中 太郎</span>
+                <span class="att-note">送迎あり</span>
+              </div>
+              <div class="att-row">
+                <span class="att-status">✅</span>
+                <span class="att-name">山本 健太</span>
+                <span class="att-note">自己送迎</span>
+              </div>
+              <div class="att-row">
+                <span class="att-status">❌</span>
+                <span class="att-name">佐藤 翔</span>
+                <span class="att-note">家族の用事</span>
+              </div>
+              <div class="att-row">
+                <span class="att-status">✅</span>
+                <span class="att-name">鈴木 一郎</span>
+                <span class="att-note">送迎あり</span>
+              </div>
+              <div class="att-row">
+                <span class="att-status">✅</span>
+                <span class="att-name">高橋 勇</span>
+                <span class="att-note">自己送迎</span>
+              </div>
+              <div class="att-row">
+                <span class="att-status">⏳</span>
+                <span class="att-name">伊藤 大輝</span>
+                <span class="att-note" style="color:var(--red);">未回答</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="phone-label">出欠確認</div>
+      </div>
+
+
+      <!-- Screen 3: Event list -->
+      <div class="phone-wrap">
+        <div class="phone">
+          <div class="phone-notch"><span></span></div>
+          <div class="phone-inner">
+            <div class="app-bar">
+              <div class="ab-title">イベント一覧</div>
+              <div class="ab-sub">2025年6月</div>
+            </div>
+            <div class="app-content">
+              <div class="att-event" style="border-left:3px solid var(--red);">
+                <div class="att-event-name">6/22 練習試合 vs FC西宮</div>
+                <div class="att-event-meta">📅 6/22 (日) 9:00〜 ｜ 甲子園前G</div>
+                <div class="att-counts">
+                  <span class="att-count yes">✅ 8</span>
+                  <span class="att-count no">❌ 2</span>
+                  <span class="att-count pending">⏳ 2</span>
+                </div>
+              </div>
+              <div class="att-event">
+                <div class="att-event-name">6/25 水曜練習</div>
+                <div class="att-event-meta">📅 6/25 (水) 17:00〜 ｜ 市民グラウンド</div>
+                <div class="att-counts">
+                  <span class="att-count yes">✅ 10</span>
+                  <span class="att-count no">❌ 1</span>
+                  <span class="att-count pending">⏳ 1</span>
+                </div>
+              </div>
+              <div class="att-event">
+                <div class="att-event-name">6/29 U10 大会</div>
+                <div class="att-event-meta">📅 6/29 (日) 8:30〜 ｜ 県立競技場</div>
+                <div class="att-counts">
+                  <span class="att-count pending">⏳ 回答待ち</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="phone-label">イベント一覧</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- PHILOSOPHY -->
+<div class="philosophy">
+  <div class="container" style="max-width:760px;">
+    <div style="text-align:center; font-size:0.65rem; font-weight:700; letter-spacing:0.28em; text-transform:uppercase; color:rgba(255,255,255,0.4); margin-bottom:14px;">OUR PHILOSOPHY</div>
+    <h2 style="text-align:center;">多機能より、<br><span>ちょうどいい</span>機能。</h2>
+    <p class="ph-sub">
+      大手アプリには「使わない機能」が多すぎて、使いこなせないことがある。<br>
+      このアプリは逆。必要なものだけを、最大限使いやすく。<br>
+      現場で本当に使われるツールを目指しています。
+    </p>
+    <div class="ph-points">
+      <div class="ph-point">
+        <div class="ph-num">01</div>
+        <div>
+          <h4>現場目線で設計</h4>
+          <p>コーチと保護者の声をもとに、実際の使い方を考えて作りました。</p>
+        </div>
+      </div>
+      <div class="ph-point">
+        <div class="ph-num">02</div>
+        <div>
+          <h4>導入ゼロ秒</h4>
+          <p>申し込み→決済→ログイン情報が届く。その日から使い始められます。</p>
+        </div>
+      </div>
+      <div class="ph-point">
+        <div class="ph-num">03</div>
+        <div>
+          <h4>月800円という安心感</h4>
+          <p>チームで割ればコーヒー1杯分。気軽に始めて、気軽に解約できます。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<section class="how" id="how">
+  <div class="container">
+    <div class="sec-label reveal">HOW IT WORKS</div>
+    <h2 class="sec-title reveal">導入はたったの4ステップ。<br>今日から使える。</h2>
+    <div class="how-steps" style="max-width:600px;">
+      <div class="how-step reveal">
+        <div class="how-num">1</div>
+        <div class="how-content">
+          <h3>プランを選んで申し込む</h3>
+          <p>試合記録・出欠管理・セットプランの中からプランを選択。チーム名とメールアドレスを入力するだけ。</p>
+          <span class="how-tag">所要時間 1分</span>
+        </div>
+      </div>
+      <div class="how-step reveal">
+        <div class="how-num">2</div>
+        <div class="how-content">
+          <h3>オンラインで決済</h3>
+          <p>Squareの安全な決済ページでクレジットカードにより月額料金をお支払い。</p>
+          <span class="how-tag">所要時間 2分</span>
+        </div>
+      </div>
+      <div class="how-step reveal">
+        <div class="how-num">3</div>
+        <div class="how-content">
+          <h3>ログイン情報がメールで届く</h3>
+          <p>決済完了後、登録メールアドレスにログインIDとパスワードをお送りします。</p>
+          <span class="how-tag">自動送信</span>
+        </div>
+      </div>
+      <div class="how-step reveal">
+        <div class="how-num">4</div>
+        <div class="how-content">
+          <h3>ブラウザを開いてログイン</h3>
+          <p>インストール不要。ブラウザからアクセスしてログイン。その日から使い始められます。</p>
+          <span class="how-tag">インストール不要</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing" id="pricing">
+  <div class="container">
+    <div class="sec-label reveal">PRICING</div>
+    <h2 class="sec-title reveal">シンプルな料金。<br>隠れた費用は一切なし。</h2>
+    <p class="sec-desc reveal">初期費用なし・月額のみ・いつでも解約OK。まずは気軽に試してみてください。</p>
+    <div class="pricing-grid reveal">
+      <div class="price-card">
+        <div class="price-name">試合記録アプリ</div>
+        <div class="price-amount">¥800<small>（税込）</small></div>
+        <div class="price-note">月額 / いつでも解約可</div>
+        <ul class="price-items">
+          <li>背番号入力で選手名が自動入力</li>
+          <li>試合カード（日付・カテゴリー別）</li>
+          <li>得点ランキング（年度/通算/月間）</li>
+          <li>チーム成績（得点・失点・得失点差）</li>
+          <li>選手個人成績・選手管理</li>
+        </ul>
+      </div>
+      <div class="price-card">
+        <div class="price-name">出欠管理アプリ</div>
+        <div class="price-amount">¥800<small>（税込）</small></div>
+        <div class="price-note">月額 / いつでも解約可</div>
+        <ul class="price-items">
+          <li>イベント出欠管理</li>
+          <li>参加者一覧確認</li>
+          <li>リンクで簡単共有</li>
+          <li>スマホ完結</li>
+        </ul>
+      </div>
+      <div class="price-card featured">
+        <div class="price-name">セットプラン</div>
+        <div class="price-amount">¥1,000<small>（税込）</small></div>
+        <div class="price-note">月額 / いつでも解約可</div>
+        <ul class="price-items">
+          <li>試合記録アプリ 全機能</li>
+          <li>出欠管理アプリ 全機能</li>
+          <li>両アプリが使い放題</li>
+          <li>メールサポート</li>
+          <li>2アプリで¥200お得</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq" id="faq">
+  <div class="container">
+    <div class="sec-label reveal">FAQ</div>
+    <h2 class="sec-title reveal">よくある質問</h2>
+    <div class="faq-list reveal">
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          スマホだけで使えますか？
+          <span class="faq-arrow">＋</span>
+        </button>
+        <div class="faq-a">
+          <p>はい。スマホ・タブレット・PCすべてに対応しています。アプリのインストールは不要で、ブラウザで開くだけで使えます。試合会場でもその場ですぐに入力できます。</p>
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          複数のコーチで使えますか？
+          <span class="faq-arrow">＋</span>
+        </button>
+        <div class="faq-a">
+          <p>はい。チームで1つのIDとパスワードを共有して使う形です。コーチや担当者が同じIDでログインできます。</p>
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          データは安全ですか？
+          <span class="faq-arrow">＋</span>
+        </button>
+        <div class="faq-a">
+          <p>チームごとに専用のデータベースを用意しています。他のチームのデータとは完全に分離されており、第三者がアクセスすることはできません。CSVやJSONでいつでもバックアップを取ることもできます。</p>
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          解約はいつでもできますか？
+          <span class="faq-arrow">＋</span>
+        </button>
+        <div class="faq-a">
+          <p>はい、いつでも解約できます。解約後もデータはCSV形式でエクスポートできますので、記録が消えてしまう心配はありません。</p>
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          2つのアプリは別々に使えますか？
+          <span class="faq-arrow">＋</span>
+        </button>
+        <div class="faq-a">
+          <p>はい、どちらか一方だけでもご利用いただけます。両方必要な場合はセットプラン（¥1,000/月）がお得です。</p>
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          サッカー以外のスポーツでも使えますか？
+          <span class="faq-arrow">＋</span>
+        </button>
+        <div class="faq-a">
+          <p>現在はU7〜U12の少年サッカーチーム向けに最適化されています。他のスポーツへの対応はご相談ください。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="container" style="max-width:640px;">
+    <h2>今日から、記録が<br>子どもの力になる。</h2>
+    <p>申し込みは1分。決済後すぐにログイン情報が届きます。<br>初期費用なし・月額¥800〜・いつでも解約OK。</p>
+    <a href="https://upo2006.github.io/mrs-app/signup.html" class="btn-white">お申し込みはこちら →</a>
+    <p class="cta-note">月額 ¥800〜（税込）・初期費用なし</p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p>© MATCH RECORD SYSTEM. All rights reserved.</p>
+</footer>
+
+<script>
+  function toggleFaq(btn) {
+    const item = btn.closest('.faq-item');
+    const isOpen = item.classList.contains('open');
+    document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+    if (!isOpen) item.classList.add('open');
+  }
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.1, rootMargin: '0px 0px -32px 0px' });
+  document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>
